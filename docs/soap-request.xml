@@ -1,0 +1,4 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:o="urn:uni:orders:v1">
+  <soap:Header/>
+  <soap:Body><o:GetOrderStatusRequest><o:orderId>aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa</o:orderId></o:GetOrderStatusRequest></soap:Body>
+</soap:Envelope>

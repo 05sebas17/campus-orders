@@ -1,0 +1,53 @@
+name: campus-orders
+services:
+  db:
+    image: postgres:17.6-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER:-orders}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD in .env}
+      POSTGRES_DB: ${DB_NAME:-orders}
+    ports:
+      - "127.0.0.1:${DB_PORT:-55432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+  backend:
+    image: campus-orders-backend:1.0.0
+    build: ./backend
+    environment:
+      SERVER_PORT: 8080
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME:-orders}
+      DB_USER: ${DB_USER:-orders}
+      DB_PASSWORD: ${DB_PASSWORD:?Define DB_PASSWORD in .env}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-local}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://localhost:18081}
+    ports:
+      - "127.0.0.1:${BACKEND_PORT:-18080}:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+  frontend:
+    image: campus-orders-frontend:1.0.0
+    build: ./frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-18081}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+volumes:
+  postgres_data:

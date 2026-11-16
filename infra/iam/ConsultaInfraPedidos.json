@@ -1,0 +1,28 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "InspectOrdersInfrastructureInVirginia",
+      "Effect": "Allow",
+      "Action": [
+        "ecs:ListClusters",
+        "ecs:DescribeClusters",
+        "ecs:ListServices",
+        "ecs:DescribeServices",
+        "ecr:DescribeRepositories",
+        "rds:DescribeDBInstances",
+        "cloudformation:ListStacks",
+        "ec2:DescribeVpcs",
+        "ec2:DescribeSubnets",
+        "ec2:DescribeRouteTables",
+        "ec2:DescribeSecurityGroups"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestedRegion": "us-east-1"
+        }
+      }
+    }
+  ]
+}

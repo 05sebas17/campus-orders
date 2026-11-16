@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Depurar backend (local)",
+      "request": "launch",
+      "mainClass": "edu.uni.orders.OrderManagementApplication",
+      "projectName": "order-management",
+      "cwd": "${workspaceFolder}/backend",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "SPRING_PROFILES_ACTIVE": "local", "SERVER_PORT": "18080", "DB_URL": "jdbc:postgresql://localhost:55432/orders"
+      }
+    }
+  ]
+}

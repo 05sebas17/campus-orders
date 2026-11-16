@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+**/target/
+**/node_modules/
+**/dist/
+**/test-results/
+**/playwright-report/
+**/*.tsbuildinfo
+.DS_Store
+*.log
+!docs/verification/backend-java21.log
+frontend/reports/
+
+# Claves privadas de acceso
+*.pem
+*.ppk

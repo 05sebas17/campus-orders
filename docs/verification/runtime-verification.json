@@ -1,0 +1,10 @@
+{
+  "persistenceAfterRestart": true,
+  "orderCount": 3,
+  "health": "UP",
+  "swaggerCreated201": true,
+  "wsdl": true,
+  "soapHttp": true,
+  "spaDeepLink": true,
+  "nginxApiProxy": true
+}

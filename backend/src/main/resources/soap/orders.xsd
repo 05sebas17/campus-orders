@@ -1,0 +1,8 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:tns="urn:uni:orders:v1" targetNamespace="urn:uni:orders:v1" elementFormDefault="qualified">
+ <xs:element name="GetOrderStatusRequest"><xs:complexType><xs:sequence>
+  <xs:element name="orderId"><xs:simpleType><xs:restriction base="xs:string"><xs:pattern value="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"/></xs:restriction></xs:simpleType></xs:element>
+ </xs:sequence></xs:complexType></xs:element>
+ <xs:element name="GetOrderStatusResponse"><xs:complexType><xs:sequence>
+  <xs:element name="number" type="xs:string"/><xs:element name="status" type="xs:string"/><xs:element name="updatedAt" type="xs:dateTime"/>
+ </xs:sequence></xs:complexType></xs:element>
+</xs:schema>
