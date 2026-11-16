@@ -64,7 +64,9 @@ Dirección utilizada en la demostración: http://54.234.225.183
 
 En el servidor, el frontend publica el puerto 80. El backend y PostgreSQL mantienen sus puertos vinculados a `127.0.0.1`. La configuración de puertos del servidor es distinta de la configuración local de este repositorio.
 
-Probé la creación de un pedido, su permanencia después de recargar la página y la validación de campos obligatorios. El despliegue fue manual; CodePipeline y CodeBuild todavía no están conectados al proyecto.
+Probé la creación de un pedido, su permanencia después de recargar la página y la validación de campos obligatorios. El despliegue inicial fue manual. Después conecté GitHub con `campus-orders-ci` y `campus-orders-build`; la ejecución de integración continua terminó correctamente y guardó los artefactos en S3.
+
+El repositorio también incluye la configuración para añadir CodeDeploy y actualizar esta misma instancia desde el pipeline. Su activación y la prueba completa en AWS se realizan siguiendo [Despliegue automático](docs/automatic-deployment.md). La implementación de esos archivos no implica que la etapa Deploy ya esté activa.
 
 La dirección puede cambiar si se detiene y se vuelve a iniciar la instancia. Cuando se eliminen los recursos, la aplicación dejará de estar disponible en esa dirección.
 
@@ -141,8 +143,9 @@ Los resultados registrados y las instrucciones completas están en [Pruebas](doc
 | `backend/` | API, reglas de los pedidos, persistencia y pruebas |
 | `frontend/` | Pantallas, formularios y conexión con la API |
 | `docs/` | Arquitectura, ejemplos y evidencias |
-| `infra/` | Documentación y política de consulta de infraestructura |
-| `scripts/` | Script para cargar las variables locales |
+| `infra/` | Plantilla CloudFormation para CodeDeploy y política de consulta |
+| `scripts/` | Configuración del pipeline, identificación de revisiones y utilidades locales |
+| `deploy/` | Imágenes de ejecución, hooks y configuración de despliegue |
 | `compose.yaml` | Configuración local de los tres servicios |
 | `.env.example` | Ejemplo de las variables necesarias |
 
@@ -159,4 +162,5 @@ La contraseña de la base de datos y la clave SSH no se incluyen en Git. El arch
 - [Arquitectura](docs/architecture.md)
 - [Ejemplos REST y SOAP](docs/api-examples.md)
 - [Despliegue y pendientes de AWS](docs/aws-next-steps.md)
+- [Activación de CodeDeploy](docs/automatic-deployment.md)
 - [Lista de evidencias](docs/evidence-checklist.md)

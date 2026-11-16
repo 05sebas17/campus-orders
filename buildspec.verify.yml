@@ -1,4 +1,4 @@
-# Verification stage only. No infrastructure creation or deployment.
+# Build and test the revision, then package it for the separate CodeDeploy stage.
 # CodeBuild Linux managed image with Java 21, Node 22 and Docker support.
 # Enable privileged mode for PostgreSQL Testcontainers.
 version: 0.2
@@ -16,11 +16,14 @@ phases:
       - npm --prefix frontend ci
   build:
     commands:
+      - python3 -m unittest discover -s scripts/tests -v
       - sh backend/mvnw -f backend/pom.xml -B -ntp verify
       - npm --prefix frontend run typecheck
       - npm --prefix frontend run lint
       - npm --prefix frontend run test -- --reporter=default --reporter=junit --outputFile=reports/junit.xml
       - npm --prefix frontend run build
+      - python3 scripts/write-revision.py
+      - chmod +x deploy/*.sh
 reports:
   backend-unit:
     files:
@@ -41,4 +44,7 @@ artifacts:
   files:
     - backend/target/order-management-1.0.0.jar
     - frontend/dist/**/*
+    - frontend/nginx.conf
+    - appspec.yml
+    - deploy/**/*
   discard-paths: no

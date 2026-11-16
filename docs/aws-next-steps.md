@@ -20,10 +20,15 @@ Los tres contenedores aparecen en estado `healthy`. La ruta `/health` del fronte
 
 Estas pruebas corresponden al despliegue manual. No representan una ejecución de CodePipeline o CodeBuild.
 
+## Integración continua
+
+El repositorio está publicado en GitHub como `05sebas17/campus-orders`. La canalización `campus-orders-ci` ejecutó correctamente el proyecto `campus-orders-build`, con informes de pruebas y artefactos en S3. Esa ejecución tenía las etapas Source y Build; no actualizó EC2 automáticamente.
+
+La ampliación con CodeDeploy está preparada en el repositorio. Para crear sus recursos, activar Deploy y comprobar un despliegue disparado por un push, seguir [Despliegue automático](automatic-deployment.md).
+
 ## Pendientes
 
-- Publicar el repositorio remoto y conectar la automatización, si lo requiere la entrega.
-- Configurar y ejecutar CodeBuild y CodePipeline. `buildspec.verify.yml` contiene la preparación para la verificación.
+- Activar y comprobar la nueva etapa Deploy en AWS, conservando los pedidos existentes.
 - Incorporar HTTPS y autenticación antes de utilizar datos reales.
 - Definir respaldos y comprobar la recuperación de los datos.
 - Configurar el arranque automático de los contenedores después de reiniciar el servidor; habilitar Docker no basta para garantizarlo.

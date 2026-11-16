@@ -1,0 +1,15 @@
+version: 0.0
+os: linux
+hooks:
+  BeforeInstall:
+    - location: deploy/preflight.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: deploy/deploy.sh
+      timeout: 1200
+      runas: root
+  ValidateService:
+    - location: deploy/validate.sh
+      timeout: 600
+      runas: root
