@@ -1,4 +1,4 @@
-# Build and test the revision, then package it for the separate CodeDeploy stage.
+# Build and test the revision, then package it for the native EC2 deploy stage.
 # CodeBuild Linux managed image with Java 21, Node 22 and Docker support.
 # Enable privileged mode for PostgreSQL Testcontainers.
 version: 0.2
@@ -45,6 +45,5 @@ artifacts:
     - backend/target/order-management-1.0.0.jar
     - frontend/dist/**/*
     - frontend/nginx.conf
-    - appspec.yml
     - deploy/**/*
   discard-paths: no

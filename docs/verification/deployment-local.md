@@ -12,3 +12,7 @@ Fecha: 16 de noviembre de 2026.
 - Los contenedores y el volumen exclusivos de esta prueba se retiraron al finalizar.
 
 Esta comprobación valida el paquete y la conservación de datos al reemplazar los servicios en el entorno local. No ejecuta los hooks mediante el agente de CodeDeploy, no comprueba el rollback y no acredita un despliegue automático en AWS. Esa comprobación requiere activar la etapa Deploy y verificar una ejecución completa iniciada por un push.
+
+## Adaptación a la acción EC2 mediante SSM
+
+Tras el rechazo de CodeDeploy por la suscripción de la cuenta, se adaptó la configuración a la acción EC2 nativa de CodePipeline. Se aprobaron seis pruebas Python, incluida la conservación de los disparadores y el rechazo de pipelines V1 sin modificarlos. La nueva plantilla `infra/ec2-deploy.yml` pasó cfn-lint. Los scripts de entrada y registro de SSM pasaron la comprobación de sintaxis Bash. No se repitió la prueba de los contenedores porque sus Dockerfiles, compose y lógica de reemplazo no cambiaron. Falta comprobar el agente SSM Online y una ejecución completa de Deploy en AWS; estos resultados no acreditan todavía ese despliegue.

@@ -16,7 +16,7 @@ spec.loader.exec_module(configure_cd)
 class DeploymentTests(unittest.TestCase):
     def pipeline(self):
         return {
-            "name": "campus-orders-ci", "version": 3, "executionMode": "QUEUED",
+            "name": "campus-orders-ci", "version": 3, "executionMode": "QUEUED", "pipelineType": "V2",
             "triggers": [{"providerType": "CodeStarSourceConnection", "gitConfiguration": {
                 "sourceActionName": "Source", "push": [{"branches": {"includes": ["main"]}}]}}],
             "stages": [
@@ -29,26 +29,37 @@ class DeploymentTests(unittest.TestCase):
 
     def test_preserves_source_build_and_trigger_and_uses_actual_artifact(self):
         original = self.pipeline()
-        result = configure_cd.add_deploy_stage(original, "app", "group")
+        result = configure_cd.add_deploy_stage(original)
         self.assertEqual(result["stages"][:2], original["stages"])
         self.assertEqual(len(original["stages"]), 2)
         self.assertEqual(result["triggers"], original["triggers"])
         self.assertEqual(result["stages"][2]["actions"][0]["inputArtifacts"], [{"name": "ActualBuildOutput"}])
+        action = result["stages"][2]["actions"][0]
+        self.assertEqual(action["actionTypeId"]["provider"], "EC2")
+        self.assertEqual(action["configuration"]["InstanceTagValue"], "campus-orders-ec2-cd")
+        self.assertEqual(action["configuration"]["PostScript"], "deploy/run-ec2.sh")
 
     def test_repeated_enable_is_idempotent(self):
-        result = configure_cd.add_deploy_stage(self.pipeline(), "app", "group")
-        self.assertEqual(result, configure_cd.add_deploy_stage(result, "app", "group"))
+        result = configure_cd.add_deploy_stage(self.pipeline())
+        self.assertEqual(result, configure_cd.add_deploy_stage(result))
 
     def test_does_not_replace_different_deployment(self):
-        result = configure_cd.add_deploy_stage(self.pipeline(), "app", "group")
+        result = configure_cd.add_deploy_stage(self.pipeline())
         with self.assertRaises(ValueError):
-            configure_cd.add_deploy_stage(result, "another-app", "group")
+            configure_cd.add_deploy_stage(result, "another-target")
 
     def test_rejects_ambiguous_build_outputs(self):
         result = self.pipeline()
         result["stages"][1]["actions"][0]["outputArtifacts"].append({"name": "Other"})
         with self.assertRaises(ValueError):
-            configure_cd.add_deploy_stage(result, "app", "group")
+            configure_cd.add_deploy_stage(result)
+
+    def test_rejects_v1_without_changing_pipeline_type(self):
+        pipeline = self.pipeline()
+        pipeline["pipelineType"] = "V1"
+        with self.assertRaises(ValueError):
+            configure_cd.add_deploy_stage(pipeline)
+        self.assertEqual(pipeline["pipelineType"], "V1")
 
     def test_revision_matches_built_commit_and_rejects_invalid_value(self):
         with tempfile.TemporaryDirectory() as directory:

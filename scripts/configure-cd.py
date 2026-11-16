@@ -12,13 +12,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 REGION = "us-east-1"
 PIPELINE = "campus-orders-ci"
-STACK = "campus-orders-cd"
+STACK = "campus-orders-ec2-cd"
 ACCOUNT = "889033546125"
 
 
-def add_deploy_stage(pipeline, application, group):
+def add_deploy_stage(pipeline, tag_value=STACK):
     """Pure transformation; preserve Source, Build, triggers and their configuration."""
     pipeline = json.loads(json.dumps(pipeline))
+    if pipeline.get("pipelineType") != "V2":
+        raise ValueError("EC2 deployment requires an existing V2 pipeline")
     stages = pipeline["stages"]
     builds = [s for s in stages if any(a["actionTypeId"]["provider"] == "CodeBuild" for a in s["actions"])]
     if len(builds) != 1:
@@ -30,9 +32,13 @@ def add_deploy_stage(pipeline, application, group):
         "name": "Deploy",
         "actions": [{
             "name": "DeployEC2",
-            "actionTypeId": {"category": "Deploy", "owner": "AWS", "provider": "CodeDeploy", "version": "1"},
+            "actionTypeId": {"category": "Deploy", "owner": "AWS", "provider": "EC2", "version": "1"},
             "runOrder": 1,
-            "configuration": {"ApplicationName": application, "DeploymentGroupName": group},
+            "configuration": {
+                "InstanceTagKey": "CampusOrdersDeploy", "InstanceTagValue": tag_value,
+                "InstanceType": "EC2", "TargetDirectory": "/opt/campus-orders/incoming",
+                "PostScript": "deploy/run-ec2.sh", "MaxBatch": "1", "MaxError": "0",
+            },
             "inputArtifacts": [{"name": actions[0]["outputArtifacts"][0]["name"]}],
             "outputArtifacts": [], "region": REGION,
         }],
@@ -60,6 +66,8 @@ def main():
         raise SystemExit("Unexpected AWS account; no changes made")
     cp, ec2, cf = (session.client(n) for n in ["codepipeline", "ec2", "cloudformation"])
     pipeline = cp.get_pipeline(name=PIPELINE)["pipeline"]
+    # Validate the action before creating any infrastructure.
+    updated = add_deploy_stage(pipeline)
     if pipeline.get("executionMode", "SUPERSEDED") != "QUEUED":
         raise SystemExit("Configure QUEUED execution before enabling deployments")
     sources = [a for s in pipeline["stages"] for a in s["actions"] if a["actionTypeId"]["category"] == "Source"]
@@ -92,16 +100,17 @@ def main():
     if profile and profile != outputs.get("InstanceProfileName"):
         raise SystemExit("Instance already has another IAM profile; merge permissions manually, do not replace it")
     if args.mode == "plan":
-        cf.validate_template(TemplateBody=(ROOT / "infra/codedeploy.yml").read_text())
-        add_deploy_stage(pipeline, STACK, STACK + "-ec2")
+        cf.validate_template(TemplateBody=(ROOT / "infra/ec2-deploy.yml").read_text())
+        session.client("ssm").describe_instance_information(MaxResults=5)
         print("Plan validated. Existing EC2, disk, security group and database will be retained.")
         return
     if args.mode == "prepare":
         subprocess.run([
             "aws", "cloudformation", "deploy", "--region", REGION,
-            "--stack-name", STACK, "--template-file", str(ROOT / "infra/codedeploy.yml"),
+            "--stack-name", STACK, "--template-file", str(ROOT / "infra/ec2-deploy.yml"),
             "--capabilities", "CAPABILITY_IAM", "--no-fail-on-empty-changeset",
             "--parameter-overrides", f"ArtifactBucket={bucket}", f"PipelineName={PIPELINE}",
+            "InstanceId=" + instance["InstanceId"],
             "PipelineRoleName=" + pipeline["roleArn"].split("/")[-1],
         ], check=True)
         stack = cf.describe_stacks(StackName=STACK)["Stacks"][0]
@@ -122,14 +131,18 @@ def main():
                         raise
                     time.sleep(5)
         ec2.create_tags(Resources=[instance["InstanceId"]], Tags=[{"Key": "CampusOrdersDeploy", "Value": STACK}])
-        print("Deployment infrastructure ready. Install the agent on EC2, then run enable.")
+        print("Deployment infrastructure ready. Start the SSM agent on EC2, wait for Online, then run enable.")
         return
     if not outputs or not profile:
-        raise SystemExit("Run prepare and install the agent before enable")
+        raise SystemExit("Run prepare and start the SSM agent before enable")
+    nodes = session.client("ssm").describe_instance_information(Filters=[
+        {"Key": "InstanceIds", "Values": [instance["InstanceId"]]}
+    ])["InstanceInformationList"]
+    if len(nodes) != 1 or nodes[0].get("PingStatus") != "Online":
+        raise SystemExit("The target instance must be Online in Systems Manager before enable")
     running = cp.list_pipeline_executions(pipelineName=PIPELINE, maxResults=20)["pipelineExecutionSummaries"]
     if any(e["status"] in ["InProgress", "Stopping"] for e in running):
         raise SystemExit("Wait for the current pipeline execution to finish before enabling Deploy")
-    updated = add_deploy_stage(pipeline, outputs["ApplicationName"], outputs["DeploymentGroupName"])
     backup = Path.home() / (PIPELINE + "-before-deploy.json")
     if not backup.exists():
         backup.write_text(json.dumps({"pipeline": pipeline}, indent=2))

@@ -24,7 +24,7 @@ Estas pruebas corresponden al despliegue manual. No representan una ejecución d
 
 El repositorio está publicado en GitHub como `05sebas17/campus-orders`. La canalización `campus-orders-ci` ejecutó correctamente el proyecto `campus-orders-build`, con informes de pruebas y artefactos en S3. Esa ejecución tenía las etapas Source y Build; no actualizó EC2 automáticamente.
 
-La ampliación con CodeDeploy está preparada en el repositorio. Para crear sus recursos, activar Deploy y comprobar un despliegue disparado por un push, seguir [Despliegue automático](automatic-deployment.md).
+La ampliación utiliza la acción EC2 de CodePipeline mediante Systems Manager. La creación de CodeDeploy fue rechazada por una restricción de suscripción de la cuenta. Para crear los nuevos recursos, activar Deploy y comprobar un despliegue disparado por un push, seguir [Despliegue automático](automatic-deployment.md).
 
 ## Pendientes
 
